@@ -3,6 +3,7 @@ package com.example.avis.demo.securite;
 import com.example.avis.demo.entites.Utilisateur;
 import com.example.avis.demo.services.UtilisateurService;
 import com.example.avis.demo.services.UtilisateurServiceImpl;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
@@ -15,7 +16,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.lang.String;
-
+import java.util.function.Function;
 
 
 @AllArgsConstructor
@@ -32,12 +33,15 @@ public class JwtService {
 
     private Map<String, String> generateJwt(Utilisateur utilisateur) {
 
-        final Map<String,String> claims = Map.of(
-                "nom",utilisateur.getNom(),
-                "email",utilisateur.getEmail()
-        );
         final long currentTime = System.currentTimeMillis();
         final long expirationTime = currentTime + 30*60*1000;
+        final Map<String,Object> claims = Map.of(
+                "nom",utilisateur.getNom(),
+                "email",utilisateur.getEmail(),
+                Claims.EXPIRATION,new Date(expirationTime),
+                Claims.SUBJECT,utilisateur.getEmail()
+        );
+
         String bearer = Jwts.builder()
                 .setIssuedAt(new Date(currentTime))
                 .setExpiration(new Date(expirationTime))
@@ -51,5 +55,33 @@ public class JwtService {
     private Key getKey() {
         byte[] decoder = Decoders.BASE64.decode(ENKRITPTION_KEY);
         return Keys.hmacShaKeyFor(decoder);
+    }
+
+    public String extractUsername(String token) {
+        return this.getClaim(token , Claims::getSubject);
+    }
+
+    public boolean isTokenExpired(String token) {
+        Date expirationDate = getExpirationDateFromToken(token);
+        return expirationDate.before(new Date());
+
+    }
+
+    private Date getExpirationDateFromToken(String token) {
+        return this.getClaim(token , Claims::getExpiration);
+    }
+
+    private <T> T getClaim(String token , Function<Claims, T> function){
+        Claims claims = getAllClaim(token);
+        return function.apply(claims);
+
+    }
+
+    private Claims getAllClaim(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(this.getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }
