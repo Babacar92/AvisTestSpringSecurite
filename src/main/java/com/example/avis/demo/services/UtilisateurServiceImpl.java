@@ -7,6 +7,10 @@ import com.example.avis.demo.enumeration.TypeDeRole;
 import com.example.avis.demo.repositories.UtilisateurRepository;
 import com.example.avis.demo.exceptions.EmailInvalideException;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +21,8 @@ import java.util.Optional;
 
 @Service
 @AllArgsConstructor
-public class UtilisateurServiceImpl implements UtilisateurService{
+
+public class UtilisateurServiceImpl implements UtilisateurService, UserDetailsService {
     private UtilisateurRepository utilisateurRepository;
     private BCryptPasswordEncoder passwordEncoder;
     private ValidationService validationService;
@@ -61,5 +66,12 @@ public class UtilisateurServiceImpl implements UtilisateurService{
 
         utilisateurActive.setActif(true);
         utilisateurRepository.save(utilisateurActive);
+    }
+
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+       return this.utilisateurRepository.findByEmail(username).orElseThrow(() -> new UsernameNotFoundException("Aucun utilisateur ne correspond a cet identifiant"));
+
     }
 }

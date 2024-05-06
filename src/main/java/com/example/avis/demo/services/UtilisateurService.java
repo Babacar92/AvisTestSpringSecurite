@@ -2,6 +2,7 @@ package com.example.avis.demo.services;
 
 import com.example.avis.demo.entites.Utilisateur;
 import com.example.avis.demo.exceptions.*;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.Map;
 
